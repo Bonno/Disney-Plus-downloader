@@ -349,7 +349,7 @@ def getKeyId(mp4_file):
     else:
         KID = "nothing"
         KID_alt = "nothing"
-    print(KID)
+    
     return KID
 
 
@@ -417,7 +417,6 @@ def load_token_file():
 
 
 def getWVKeys(pssh):
-    print(pssh)
     pssh = PSSH(pssh)
     lic_url = "https://disney.playback.edge.bamgrid.com/widevine/v1/obtain-license"
     headers = {
@@ -868,7 +867,6 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
             print("Getting KEYS from license server...")
             try:
                 KEYS = getWVKeys(pssh=pssh)
-                print(KEYS)
                 SAVELIST = ["\n"] + [episodename] + ["\n"] + KEYS + ["\n"]
                 with open(KEYS_Text, "a", encoding="utf8") as file:
                     for KEY in SAVELIST:
