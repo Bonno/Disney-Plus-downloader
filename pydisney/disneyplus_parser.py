@@ -225,7 +225,7 @@ class Parser(object):
 					)
 
 		videoList = sorted(videoList, key=lambda k: int(k['bandwidth']))
-		print(videoList)
+		#print(videoList)
 
 		return videoList, AudioList, subtitleList, forcedlist, AudioExtension
 			

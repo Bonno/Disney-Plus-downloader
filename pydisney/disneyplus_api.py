@@ -19,11 +19,12 @@ class DSNP(object):
 			self.Season = Season
 
 		self.api = {
-			'DmcSeriesBundle': 'https://disney.content.edge.bamgrid.com/svc/content/DmcSeriesBundle/version/5.1/region/US/audience/false/maturity/1850/language/en/encodedSeriesId/{video_id}',
+			'DmcSeriesBundle': 'https://disney.content.edge.bamgrid.com/svc/content/DmcSeriesBundle/version/5.1/region/NL/audience/false/maturity/1850/language/en/encodedSeriesId/{video_id}',
 
-			'DmcEpisodes': 'https://disney.content.edge.bamgrid.com/svc/content/DmcEpisodes/version/5.1/region/US/audience/false/maturity/1850/language/en/seasonId/{season_id}/pageSize/30/page/1',
+			'DmcEpisodes': 'https://disney.content.edge.bamgrid.com/svc/content/DmcEpisodes/version/5.1/region/NL/audience/false/maturity/1850/language/en/seasonId/{season_id}/pageSize/30/page/1',
 
-   			'DmcVideo': 'https://disney.content.edge.bamgrid.com/svc/content/DmcVideoBundle/version/5.1/region/US/audience/false/maturity/1850/language/en/encodedFamilyId/{family_id}',
+   			'DmcVideo': 'https://disney.content.edge.bamgrid.com/svc/content/DmcVideoBundle/version/5.1/region/NL/audience/false/maturity/1850/language/nl/encodedFamilyId/{family_id}',
+			#'DmcVideo': 'https://disney.content.edge.bamgrid.com/svc/content/DmcVideo/version/5.1/region/NL/audience/k-false,l-true/maturity/1850/language/nl/contentId/{family_id}',
 
 			'LicenseServer': 'https://edge.bamgrid.com/widevine/v1/obtain-license',
 			'manifest': 'https://us.edge.bamgrid.com/media/{mediaid}/scenarios/{scenarios}'
@@ -31,13 +32,64 @@ class DSNP(object):
 		self.scenarios = {
 			"default": "restricted-drm-ctr-sw",
 			"default_hevc": "handset-drm-ctr-h265",
-			"SD": "handset-drm-ctr",
+			#"SD": "handset-drm-ctr",
+			"SD": "ctr-regular",
 			"HD": "tv-drm-ctr",
 			"atmos": "tv-drm-ctr-h265-hdr10-atmos",
 			"uhd_sdr": "tv-drm-ctr-h265-atmos",
 			"uhd_hdr": "tv-drm-ctr-h265-hdr10-atmos",
 			"uhd_dv": "tv-drm-ctr-h265-dovi-atmos",
 		}
+
+	def load_info_m3u8_post(self, mediaId, mediaFormat, playbackUrl, quality, isAtmos=False):
+		#print(mediaFormat)
+		#print(quality)
+		headers = {
+			"accept": "application/vnd.media-service+json; version=6",
+			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36",
+			"Sec-Fetch-Mode": "cors",
+			"x-bamsdk-platform": "windows",
+			"x-bamsdk-version": '3.10',
+			"Origin": 'https://www.disneyplus.com',
+			"authorization": self.Token,
+			'x-dss-feature-filtering': 'true',
+		}
+		
+		json_data = {
+		    "playback": {
+		        "attributes": {
+		            "codecs": {
+		                'supportsMultiCodecMaster': False, #if true outputs all codecs and resoultion in single playlist
+		            },
+		            "protocol": "HTTPS",
+		            #"ads": "",
+		            "frameRates": [60],
+		            "assetInsertionStrategy": "SGAI",
+		            "playbackInitializationContext": "online",
+		            "resolution": {
+				'max': [
+				    '1280x720',
+				],
+			    },
+		        },
+		    }
+		}
+		url = playbackUrl.format(scenario=self.scenarios['SD'])
+		#print(url)
+		resp = requests.post(url, headers=headers, json=json_data)
+
+		if resp.status_code != 200:
+			print('M3U8 - Error:' + str(resp.text))
+			return False
+
+		data = json.loads(resp.text)
+		#print(data['stream']['sources'][0]['complete']['url'])
+		m3u8_url = data['stream']['sources'][0]['complete']['url']
+
+		if isAtmos:
+			return m3u8_url, atmos_url
+
+		return m3u8_url, None
 
 	def load_info_m3u8(self, mediaId, mediaFormat, quality, isAtmos=False):
 
@@ -84,8 +136,12 @@ class DSNP(object):
 
 			else:
 				url = self.api['manifest'].format(mediaid=mediaId, scenarios=self.scenarios['HD'])
+		
+		#print(url)
 
 		resp = requests.get(url=url, headers=headers)
+
+		#print(resp)
 
 		if resp.status_code != 200:
 			print('M3U8 - Error:' + str(resp.text))
@@ -116,6 +172,7 @@ class DSNP(object):
 		else:
 			url = self.api['DmcSeriesBundle'].format(video_id=self.DsnyID)
 
+		#print(url)
 
 		resp = requests.get(url=url, headers=headers)
 
@@ -127,6 +184,7 @@ class DSNP(object):
 
 		if self.isAmovie:
 			data_info = data['data']['DmcVideoBundle']['video']
+			#print(data_info)
 			title = data_info['text']['title']['full']['program']['default']['content']
 			description = data_info['text']['description']['medium']['program']['default']['content']
 			js_data = {
@@ -134,11 +192,13 @@ class DSNP(object):
 				'Year': data_info['releases'][0]['releaseYear'],
 				'Description': description,
 				'mediaFormat': data_info['mediaMetadata']['format'],
+				'playbackUrl': data_info['mediaMetadata']['playbackUrls'][0]['href'],
 				'id': {
 					'contentId': data_info['contentId'],
 					'mediaId': data_info['mediaMetadata']['mediaId']
 					}
 			}
+			#print(js_data)
 			return js_data
 		else:
 			EpisodeList = []

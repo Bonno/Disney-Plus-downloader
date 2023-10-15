@@ -13,3 +13,5 @@ svtplay_dl==3.7
 titlecase
 tqdm
 Unidecode
+pywidevine
+pyaml

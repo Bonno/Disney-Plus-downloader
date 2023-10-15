@@ -42,39 +42,39 @@ class Muxer(object):
 				sys.stdout.flush()
 		print('')
 
-		return 
+		return
 
 	def DPMuxer(self):
-		
+
 		VideoInputNoExist = False
-		
-		if os.path.isfile('.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p].h264'):
-			VideoInputName = '.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p].h264'
-			if self.Type == "show":
-				VideoOutputName = '.\\'+self.SeasonFolder+'\\'+self.CurrentName + '.mkv'
-			else:
-				VideoOutputName = '.\\'+self.CurrentName + '.mkv'
 
-		elif os.path.isfile('.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p].h265'):
-			VideoInputName = '.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p].h265'
+		if os.path.isfile(self.CurrentName + ' [' + self.CurrentHeigh + 'p].h264'):
+			VideoInputName = self.CurrentName + ' [' + self.CurrentHeigh + 'p].h264'
 			if self.Type == "show":
-				VideoOutputName = '.\\'+self.SeasonFolder+'\\'+self.CurrentName + '.mkv'
+				VideoOutputName = os.path.join(self.SeasonFolder, self.CurrentName + '.mkv')
 			else:
-				VideoOutputName = '.\\'+self.CurrentName + '.mkv'
+				VideoOutputName = self.CurrentName + '.mkv'
 
-		elif os.path.isfile('.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HEVC].h265'):
-			VideoInputName = '.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HEVC].h265'
+		elif os.path.isfile(self.CurrentName + ' [' + self.CurrentHeigh + 'p].h265'):
+			VideoInputName = self.CurrentName + ' [' + self.CurrentHeigh + 'p].h265'
 			if self.Type == "show":
-				VideoOutputName = '.\\'+self.SeasonFolder+'\\'+self.CurrentName + '.mkv'
+				VideoOutputName = os.path.join(self.SeasonFolder, self.CurrentName + '.mkv')
 			else:
-				VideoOutputName = '.\\'+self.CurrentName + '.mkv'
-		
-		elif os.path.isfile('.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HDR].h265'):
-			VideoInputName = '.\\'+self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HDR].h265'
+				VideoOutputName = self.CurrentName + '.mkv'
+
+		elif os.path.isfile(self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HEVC].h265'):
+			VideoInputName = self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HEVC].h265'
 			if self.Type == "show":
-				VideoOutputName = '.\\'+self.SeasonFolder+'\\'+self.CurrentName + '.mkv'
+				VideoOutputName = os.path.join(self.SeasonFolder, self.CurrentName + '.mkv')
 			else:
-				VideoOutputName = '.\\'+self.CurrentName + '.mkv'		
+				VideoOutputName = self.CurrentName + '.mkv'
+
+		elif os.path.isfile(self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HDR].h265'):
+			VideoInputName = self.CurrentName + ' [' + self.CurrentHeigh + 'p] [HDR].h265'
+			if self.Type == "show":
+				VideoOutputName = os.path.join(self.SeasonFolder, self.CurrentName + '.mkv')
+			else:
+				VideoOutputName = self.CurrentName + '.mkv'
 		else:
 			VideoInputNoExist = True
 
@@ -88,12 +88,12 @@ class Muxer(object):
 									".mp3",
 									".aac",
 								]
-			
+
 			SubsExtensionsList= [
 									".srt",
 									".ass",
 								]
-			
+
 
 			language_tag = "English"
 
@@ -188,20 +188,20 @@ class Muxer(object):
 									["Ukrainian", "ukr", "ukr", "Ukrainian", "no", "no"],
 									["Urdu", "urd", "urd", "Urdu", "no", "no"],
 									["Vietnamese", "vie", "vie", "Vietnamese", "no", "no"],								]
-			
+
 			ALLAUDIOS = []
 			for audio_language, subs_language, language_id, language_name, audio_default, subs_default in LanguageList:
 				for AudioExtension in AudioExtensionsList:
-					if os.path.isfile('.\\' + self.CurrentName + ' ' + language_id + AudioExtension):
+					if os.path.isfile(self.CurrentName + ' ' + subs_language + AudioExtension):
 						if language_id == self.defaults['audio']:
-							ALLAUDIOS = ALLAUDIOS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name, '--default-track', '0:yes', '(', '.\\' + self.CurrentName + ' ' + language_id + AudioExtension, ')']
+							ALLAUDIOS = ALLAUDIOS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name, '--default-track', '0:yes', '(', self.CurrentName + ' ' + subs_language + AudioExtension, ')']
 						else:
-							ALLAUDIOS = ALLAUDIOS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name, '--default-track', '0:no', '(', '.\\' + self.CurrentName + ' ' + language_id + AudioExtension, ')']
+							ALLAUDIOS = ALLAUDIOS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name, '--default-track', '0:no', '(', self.CurrentName + ' ' + subs_language + AudioExtension, ')']
 
 			OnlyOneLanguage = False
 			if len(ALLAUDIOS) == 9:
 				OnlyOneLanguage = True
-			
+
 			elif len(ALLAUDIOS) == 18:
 				if ALLAUDIOS[1] == ALLAUDIOS[10]:
 					if ' - Audio Description' in ALLAUDIOS[7] or ' - Audio Description' in ALLAUDIOS[16]:
@@ -214,25 +214,25 @@ class Muxer(object):
 				if subs_language == self.defaults['sub']:
 					subs_default == 'yes'
 				for SubsExtension in SubsExtensionsList:
-					if os.path.isfile('.\\' + self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension):
+					if os.path.isfile(self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension):
 						if subs_language == self.defaults['sub']:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_forced, '--forced-track', '0:yes', '--default-track', '0:no', '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension, ')']
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_forced, '--forced-track', '0:yes', '--default-track', '0:no', '--compression', '0:none', '(', self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension, ')']
 						else:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_forced, '--forced-track', '0:yes', '--default-track', '0:' + subs_default, '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension, ')']
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_forced, '--forced-track', '0:yes', '--default-track', '0:' + subs_default, '--compression', '0:none', '(', self.CurrentName + ' ' + 'forced-' + subs_language + SubsExtension, ')']
 					if OnlyOneLanguage == True:
 						pass
-					if os.path.isfile('.\\' + self.CurrentName + ' ' + subs_language + SubsExtension):
+					if os.path.isfile(self.CurrentName + ' ' + subs_language + SubsExtension):
 						if subs_language == self.defaults['sub']:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:yes', '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + subs_language + SubsExtension, ')']
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:yes', '--compression', '0:none', '(', self.CurrentName + ' ' + subs_language + SubsExtension, ')']
 						else:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:' + subs_default, '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + subs_language + SubsExtension, ')']
-					elif os.path.isfile('.\\' + self.CurrentName + ' ' + subs_language + SubsExtension):
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:' + subs_default, '--compression', '0:none', '(', self.CurrentName + ' ' + subs_language + SubsExtension, ')']
+					elif os.path.isfile(self.CurrentName + ' ' + subs_language + SubsExtension):
 						if subs_language == self.defaults['sub']:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:yes', '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + subs_language + SubsExtension, ')']
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:yes', '--compression', '0:none', '(', self.CurrentName + ' ' + subs_language + SubsExtension, ')']
 						else:
-							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:no', '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + subs_language + SubsExtension, ')']
-					if os.path.isfile('.\\' + self.CurrentName + ' ' + 'sdh-' + subs_language + SubsExtension):
-						ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_sdh, '--forced-track', '0:no', '--default-track', '0:no', '--compression', '0:none', '(', '.\\' + self.CurrentName + ' ' + 'sdh-' + subs_language + SubsExtension, ')']
+							ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_full, '--forced-track', '0:no', '--default-track', '0:no', '--compression', '0:none', '(', self.CurrentName + ' ' + subs_language + SubsExtension, ')']
+					if os.path.isfile(self.CurrentName + ' ' + 'sdh-' + subs_language + SubsExtension):
+						ALLSUBS = ALLSUBS + ['--language', '0:' + language_id, '--track-name', '0:' + language_name + ' ' + subs_sdh, '--forced-track', '0:no', '--default-track', '0:no', '--compression', '0:none', '(', self.CurrentName + ' ' + 'sdh-' + subs_language + SubsExtension, ')']
 
 			#MUX
 

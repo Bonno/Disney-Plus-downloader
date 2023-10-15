@@ -1,0 +1,7 @@
+dsnp.cfg
+Downloads
+token.ini
+__pycache__
+*.wvd
+venv
+KEYS/*
