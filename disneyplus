@@ -1,0 +1,17 @@
+#!/bin/bash
+
+alangs='eng nld'
+slangs='nl'
+flangs='None'
+group=''
+
+
+PYTHON=$(which python3)
+if [[ "$1" = "" ]]; then
+    echo 'No Disney URL given'
+    exit 0
+fi
+
+source venv/bin/activate
+$PYTHON disneyplus.py --group $group --alang $alangs --slang $slangs --flang $flangs --url $1
+deactivate
