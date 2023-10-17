@@ -167,7 +167,6 @@ KEYS_Folder = dirPath + "/KEYS"
 KEYS_Text = dirPath + "/KEYS/KEYS.txt"
 token_file = dirPath + "/token.ini"
 DsnpCFG = dirPath + "/dsnp.cfg"
-wvdCnfg = dirPath + "/wileyfox_wileyfox_swift_v5.0.0-android_98c17395_4445_l3.wvd"
 shakaCmd = shutil.which("shaka-packager")
 mkvmergeCmd = shutil.which("mkvmerge")
 Nm3u8DLRE = shutil.which("N_m3u8DL-RE")
@@ -194,7 +193,8 @@ if os.path.exists(DsnpCFG):
     DSNP_EMAIL = Config.get("config", "email")
     DSNP_PASS = Config.get("config", "pass")
 else:
-    print("\ndsnp.cfg File is missing.")
+    print()
+    print("dsnp.cfg File is missing.")
     sys.exit()
 
 global account_info
@@ -416,7 +416,7 @@ def load_token_file():
     return Token
 
 
-def getWVKeys(pssh):
+def getWVKeys(pssh, episodename):
     pssh = PSSH(pssh)
     lic_url = "https://disney.playback.edge.bamgrid.com/widevine/v1/obtain-license"
     headers = {
@@ -433,7 +433,12 @@ def getWVKeys(pssh):
 
     # load device
     # for example
-    device = Device.load(wvdCnfg)
+    device = Device.load(
+        os.path.join(
+            dirPath,
+            Config.get("config", "cdmwvd")
+        )
+    )
 
     # load cdm
     cdm = Cdm.from_device(device)
@@ -459,8 +464,16 @@ def getWVKeys(pssh):
 
     # close session, disposes of session data
     cdm.close(session_id)
+
+    saveKeyToFile(episodename, keys=wvkeys)
+
     return wvkeys
 
+def saveKeyToFile(episodename, keys):
+    keysList = ["\n"] + [episodename] + ["\n"] + keys + ["\n"]
+    with open(KEYS_Text, "a", encoding="utf8") as file:
+        for key in keysList:
+            file.write(key)
 
 def ReplaceDontLikeWord(X):
     try:
@@ -556,17 +569,6 @@ def StripInputInt(inputint):
 
 
 def do_clean(CurrentName):
-#-               os.system('if exist "' + CurrentName + '*.mp4" (del /q /f "' + CurrentName + '*.mp4")')
-#-               os.system('if exist "' + CurrentName + '*.h265" (del /q /f "' + CurrentName + '*.h265")')
-#-               os.system('if exist "' + CurrentName + '*.h264" (del /q /f "' + CurrentName + '*.h264")')
-#-               os.system('if exist "' + CurrentName + '*.eac3" (del /q /f "' + CurrentName + '*.eac3")')
-#-               os.system('if exist "' + CurrentName + '*.m4a" (del /q /f "' + CurrentName + '*.m4a")')
-#-               os.system('if exist "' + CurrentName + '*.ac3" (del /q /f "' + CurrentName + '*.ac3")')
-#-               os.system('if exist "' + CurrentName + '*.srt" (del /q /f "' + CurrentName + '*.srt")')
-#-               os.system('if exist "' + CurrentName + '*.vtt" (del /q /f "' + CurrentName + '*.vtt")')
-#-               os.system('if exist "' + CurrentName + '*.txt" (del /q /f "' + CurrentName + '*.txt")')
-#-               os.system('if exist "' + CurrentName + '*.aac" (del /q /f "' + CurrentName + '*.aac")')
-#-               os.system('if exist "' + CurrentName + '*.m3u8" (del /q /f "' + CurrentName + '*.m3u8")')
     patterns = [
         '*.mp4',
         '*.h265',
@@ -629,6 +631,8 @@ def PRINT(videoList, AudioList, subtitleList):
 
     return
 
+def normalizeEpisodename(episodename):
+    return episodename.replace("-", "").replace("  ", " ").replace(" ", ".").replace("'", "").replace(",", "")
 
 def demux(inputName, outputName, inpType):
     os.rename(inputName, outputName)
@@ -656,6 +660,7 @@ def build_commandline_list(KEYS):
 
 def decryptmedia(KEYS, inputName, outputName):
     if shakaCmd is None:
+        print(KEYS)
 
         cmd_dec = [mp4decryptexe.replace("\\", "/")]
         cmd_keys = build_commandline_list(KEYS)
@@ -803,7 +808,6 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
     else:
         videoList = videoList[-1]
 
-    # --
     keys_requested = False
     pssh = get_pssh(videoList["url"])
 
@@ -811,7 +815,7 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
         print("\nGetting KEYS...")
         KEYS = []
         try:
-            KEYS = getWVKeys(pssh=pssh)  # do_decrypt(pssh)
+            KEYS = getWVKeys(pssh, episodename)
         except Exception as e:
             print(str(e))
             pass
@@ -823,8 +827,6 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
         print("\n".join(KEYS))
 
         return True
-
-    # --
 
     CurrentHeigh = str(videoList["height"])
 
@@ -866,11 +868,7 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
             print()
             print("Getting KEYS from license server...")
             try:
-                KEYS = getWVKeys(pssh=pssh)
-                SAVELIST = ["\n"] + [episodename] + ["\n"] + KEYS + ["\n"]
-                with open(KEYS_Text, "a", encoding="utf8") as file:
-                    for KEY in SAVELIST:
-                        file.write(KEY)
+                KEYS = getWVKeys(pssh, episodename)
             except Exception as e:
                 print(str(e))
                 pass
@@ -883,21 +881,17 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
 
     if os.path.isfile(MKVOUT1) or os.path.isfile(MKVOUT2):
         print("\nFile '" + str(MKVOUT1) + "' already exists.")
+        print('DEBUG: ' + episodename)
+        namer.rename(file=MKVOUT1, source="DSNP", group=args.group)
         return
 
-
-    do_clean(episodename)
-
     mkvVideos = glob.glob(
-        episodename.replace(" ", ".").replace("'", "").replace(",", "") + "*.mkv"
+        normalizeEpisodename(episodename) + "*.mkv"
     )
     if mkvVideos:
         print(
             "\nFile '"
-            + str(
-                episodename.replace(" ", ".").replace("'", "").replace(",", "")
-                + "*.mkv"
-            )
+            + str(normalizeEpisodename(episodename) + "*.mkv")
             + "' already exists."
         )
         return
@@ -960,15 +954,21 @@ def main(episodename, seasonfolder, m3u8Url, SHOW=True):
             and not os.path.isfile(inputVideo_decrypted)
             and not os.path.isfile(inputVideo_demuxed)
         ):
+            VALIDKEYS = ''
             kid = getKeyId(inputVideo)
             for key in KEYS:
                 if kid == key.split(":")[0]:
-                    KEYS = key
-            if KEYS == "":
-                print("please put vaild keys in txt.")
+                    VALIDKEYS = key
+
+            if VALIDKEYS == "":
+                print('No valid key found in key file, getting key from server...')
+                VALIDKEYS = getWVKeys(pssh, episodename)[0]
+
+            if VALIDKEYS == "":
+                print("please put valid keys in txt.")
                 sys.exit(0)
             print("\nDecrypt video...")
-            decryptmedia(KEYS, inputVideo, inputVideo_decrypted)
+            decryptmedia(str(VALIDKEYS), inputVideo, inputVideo_decrypted)
             print("Done!")
 
         # DEMUX VIDEO

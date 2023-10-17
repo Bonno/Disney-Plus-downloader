@@ -1,17 +1,18 @@
 #!/bin/bash
 
-alangs='eng nld'
-slangs='nl'
-flangs='None'
-group=''
-
-
-PYTHON=$(which python3)
 if [[ "$1" = "" ]]; then
     echo 'No Disney URL given'
     exit 0
 fi
 
+source <(grep = <(sed "s/;/#/g" dsnp.cfg) | sed 's/ *= */=/g')
+alangs="${alangs:-eng}"
+slangs="${slangs:-None}"
+flangs="${flangs:-None}"
+group="${group:-}"
+
+PYTHON=$(which python3)
+
 source venv/bin/activate
-$PYTHON disneyplus.py --group $group --alang $alangs --slang $slangs --flang $flangs --url $1
+$PYTHON disneyplus.py --group $group --alang $alangs --slang $slangs --flang $flangs --txtkeys --url $@
 deactivate

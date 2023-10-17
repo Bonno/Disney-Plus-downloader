@@ -1,5 +1,8 @@
 [config]
 email = your email
 pass = your pass
-
-
+cdmwvd = your.wvd
+group =
+alangs = eng
+slangs = None
+flangs = None

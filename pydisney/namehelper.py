@@ -33,7 +33,8 @@ def rename(file, source, group):
                     codec = "x265"
                 else:
                     codec = "H265"
-            if "Main 10@L5" in track.format_profile:
+
+            if track.format_profile is not None and "Main 10@L5" in track.format_profile:
                 hdr = True
             else:
                 hdr = None
